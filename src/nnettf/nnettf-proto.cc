@@ -23,8 +23,6 @@ limitations under the License.
 namespace kaldi {
 namespace nnettf {
 
-using google::protobuf::internal;
-
 void NnetTfExample::addFeature(std::string name, int v) {
   auto feature = &(*this->example.mutable_features()->mutable_feature())[name];
   feature->mutable_int64_list()->add_value(v);
@@ -38,7 +36,7 @@ void NnetTfExample::addFeature(std::string name,
   for (MatrixIndexT i = 0; i < v.NumRows(); i++) {
     std::copy(v.RowData(i),
               v.RowData(i) + v.NumCols(),
-              RepeatedFieldBackInsertIterator<float>(vl));
+              google::protobuf::internal::RepeatedFieldBackInsertIterator<float>(vl));
   }
 }
 

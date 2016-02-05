@@ -120,8 +120,8 @@ static void ProcessFile(const MatrixBase <BaseFloat> &feats,
 
 int main(int argc, char *argv[]) {
   try {
-    using kaldi;
-    using kaldi::nnettf;
+    using namespace kaldi;
+    using namespace kaldi::nnettf;
     typedef kaldi::int32 int32;
     typedef kaldi::int64 int64;
 

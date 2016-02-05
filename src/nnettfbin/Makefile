@@ -4,7 +4,7 @@ all:
 include ../nnettf.mk 
 
 LDFLAGS += $(CUDA_LDFLAGS)
-LDLIBS += $(CUDA_LDLIBS) -lz
+LDLIBS += $(CUDA_LDLIBS)
 
 BINFILES = nnettf-get-protoegs
 

@@ -76,7 +76,8 @@ echo "PROTOBUFROOT := $PROTOBUFROOT" >> nnettf.mk
 
 echo "EXTRA_CXXFLAGS += -I${KALDIROOT}/src" >> nnettf.mk
 echo "EXTRA_CXXFLAGS += -I${PROTOBUFROOT}/include" >> nnettf.mk
-echo "EXTRA_LDLIBS += -L${PROTOBUFROOT}/lib -lprotobuf" >> nnettf.mk
+##echo "EXTRA_LDLIBS += -L${PROTOBUFROOT}/lib -lprotobuf" >> nnettf.mk
+echo "EXTRA_LDLIBS += ${PROTOBUFROOT}/lib/libprotobuf.a" >> nnettf.mk
 
 echo "PROTOCTOOL := $PROTOBUFROOT/bin/protoc" >> nnettf.mk
 echo "include $KALDIROOT/src/kaldi.mk" >> nnettf.mk

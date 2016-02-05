@@ -1,0 +1,82 @@
+#!/bin/bash
+
+CONFIGURE_VERSION=2
+
+function rel2abs {
+  if [ ! -z "$1" ]; then
+    local retval=`cd $1 2>/dev/null && pwd || exit 1`
+    echo $retval
+  fi
+}
+
+##   First do some checks.  These verify that all the things are
+##   here that should be here.
+if ! [ -x "$PWD/configure" ]; then
+  echo 'You must run "configure" from the src/ directory.'
+  exit 1
+fi
+
+PROTOBUFROOT=`rel2abs ../tools/protobuf/install`
+KALDIROOT=`rel2abs ../../kaldi-trunk`
+
+function usage {
+  echo 'Usage: ./configure [--protobuf-root=PROTOBUFROOT] [--kaldi-root=KALDIROOT]';
+}
+
+cmd_line="$0 $@"  # Save the command line to include in kaldi.mk
+
+while [ $# -gt 0 ];
+do
+  case "$1" in
+  --help)
+    usage; exit 0 ;;
+  --version)
+    echo $CONFIGURE_VERSION; exit 0 ;;
+  --protobuf-root=*)
+    PROTOBUFROOT=`read_dirname $1`;
+    shift ;;
+  --kaldi-root=*)
+    KALDIROOT=`read_dirname $1`;
+    shift ;;
+  *)  echo "Unknown argument: $1, exiting"; usage; exit 1 ;;
+  esac
+done
+
+
+function failure {
+  echo "***configure failed: $* ***" >&2
+  if [ -f nnettf.mk ]; then rm nnettf.mk; fi
+  exit 1;
+}
+
+echo "Configuring ..."
+
+echo "Checking ProtoBuf library in $PROTOBUFROOT ..."
+if [ ! -f $PROTOBUFROOT/include/google/protobuf/any.h  ]; then
+    failure "Could not find file $PROTOBUFROOT/include/google/protobuf/any.h:
+    you may not have installed ProtoBuf.  See ../INSTALL"
+fi
+
+echo "Checking Kaldi in $KALDIROOT ..."
+if [ ! -f $KALDIROOT/src/kaldi.mk ]; then
+    failure "Could not find file $KALDIROOT/src/kaldi.mk:
+    you may not have installed Kaldi. See ../INSTALL"
+fi
+
+if [ -f nnettf.mk ]; then
+  echo "Backing up nnettf.mk to nnettf.mk.bak"
+  cp nnettf.mk nnettf.mk.bak
+fi
+
+
+printf "# This file was generated using the following command:\n# $cmd_line\n\n" > nnettf.mk
+
+echo "KALDIROOT := $KALDIROOT" >> nnettf.mk
+echo "PROTOBUFROOT := $PROTOBUFROOT" >> nnettf.mk
+
+echo "EXTRA_CXXFLAGS += -I${KALDIROOT}/src" >> nnettf.mk
+echo "EXTRA_CXXFLAGS += -I${PROTOBUFROOT}/include" >> nnettf.mk
+echo "EXTRA_LDLIBS += -L${PROTOBUFROOT}/lib -lprotobuf" >> nnettf.mk
+
+echo "PROTOCTOOL := $PROTOBUFROOT/bin/protoc" >> nnettf.mk
+echo "include $KALDIROOT/src/kaldi.mk" >> nnettf.mk

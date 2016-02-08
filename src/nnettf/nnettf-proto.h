@@ -28,12 +28,15 @@ namespace kaldi {
 namespace nnettf {
 
 struct NnetTfExample {
-  tensorflow::Example example;
+  tensorflow::SequenceExample sequenceExample;
 
   void addFeature(std::string name, int v);
   void addFeature(std::string name, const MatrixBase <BaseFloat> &v);
-  void addFeature(std::string name, Posterior v);
   void addFeature(std::string name, std::string v);
+
+  void addSequenceFeature(std::string name, const MatrixBase <BaseFloat> &v);
+  void addSequenceFeature(std::string name, const Posterior v);
+
 };
 
 struct NnetTfProtoWriter {

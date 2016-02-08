@@ -24,13 +24,18 @@ namespace kaldi {
 namespace nnettf {
 
 void NnetTfExample::addFeature(std::string name, int v) {
-  auto feature = &(*this->example.mutable_features()->mutable_feature())[name];
+  auto feature = &(*this->sequenceExample.mutable_context()->mutable_feature())[name];
   feature->mutable_int64_list()->add_value(v);
+}
+
+void NnetTfExample::addFeature(std::string name, std::string v) {
+  auto feature = &(*this->sequenceExample.mutable_context()->mutable_feature())[name];
+  feature->mutable_bytes_list()->add_value(v);
 }
 
 void NnetTfExample::addFeature(std::string name,
                                const MatrixBase <BaseFloat> &v) {
-  auto feature = &(*this->example.mutable_features()->mutable_feature())[name];
+  auto feature = &(*this->sequenceExample.mutable_context()->mutable_feature())[name];
   auto vl = feature->mutable_float_list()->mutable_value();
 
   for (MatrixIndexT i = 0; i < v.NumRows(); i++) {
@@ -40,19 +45,39 @@ void NnetTfExample::addFeature(std::string name,
   }
 }
 
-void NnetTfExample::addFeature(std::string name, Posterior v) {
-  auto feature = &(*this->example.mutable_features()->mutable_feature())[name];
+void NnetTfExample::addSequenceFeature(std::string name,
+                               const MatrixBase <BaseFloat> &v) {
+  auto feature = &(*this->sequenceExample.mutable_feature_lists()->mutable_feature_list())[name];
+
+  for (MatrixIndexT i = 0; i < v.NumRows(); i++) {
+    auto f = feature->add_feature();
+    auto f_val = f->mutable_float_list()->mutable_value();
+
+    std::copy(v.RowData(i),
+              v.RowData(i) + v.NumCols(),
+              google::protobuf::internal::RepeatedFieldBackInsertIterator<float>(f_val));
+//    feature->add_feature(f);
+  }
+}
+
+void NnetTfExample::addSequenceFeature(std::string name, Posterior v) {
+  auto feature = &(*this->sequenceExample.mutable_feature_lists()->mutable_feature_list())[name];
+
+//  auto feature = &(*this->example.mutable_features()->mutable_feature())[name];
   int32 num_rows = v.size();
 
   for (int i = 0; i < num_rows; i++) {
+    auto f = feature->add_feature();
+
     if (v[i].size() == 0) {
-      feature->mutable_int64_list()->add_value(-1);  // no label is -1
+      f->mutable_int64_list()->add_value(-1);  // no label is -1
     } else if (v[i].size() == 1) {
-      feature->mutable_int64_list()->add_value(v[i][0].first);
+      f->mutable_int64_list()->add_value(v[i][0].first);
     } else {
       // We should only have at most one label per frame (at the moment)
       KALDI_ASSERT(false);
     }
+//    feature->add_feature(f);
   }
 }
 
@@ -60,15 +85,9 @@ static uint32 MaskedCrc(const char *data, size_t n) {
   return crc32c::Mask(crc32c::Value(data, n));
 }
 
-
-void NnetTfExample::addFeature(std::string name, std::string v) {
-  auto feature = &(*this->example.mutable_features()->mutable_feature())[name];
-  feature->mutable_bytes_list()->add_value(v);
-}
-
 void NnetTfProtoWriter::Write(NnetTfExample eg) {
   // we assume we are on a little endian system, if not change this stuff
-  auto data = eg.example.SerializeAsString();
+  auto data = eg.sequenceExample.SerializeAsString();
   auto data_length = data.size();
 
   char header[sizeof(uint64_t) + sizeof(uint32_t)];

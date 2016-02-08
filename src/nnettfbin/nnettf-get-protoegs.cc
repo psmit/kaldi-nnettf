@@ -46,6 +46,7 @@ static void ProcessFile(const MatrixBase <BaseFloat> &feats,
                         NnetTfProtoWriter *example_writer) {
   KALDI_ASSERT(feats.NumRows() == static_cast<int32>(pdf_post.size()));
 
+  if (frames_per_eg == 0) frames_per_eg = feats.NumRows();
   for (int32 t = 0; t < feats.NumRows(); t += frames_per_eg) {
     // actual_frames_per_eg is the number of frames with nonzero
     // posteriors.  At the end of the file we pad with zero posteriors
@@ -55,12 +56,12 @@ static void ProcessFile(const MatrixBase <BaseFloat> &feats,
                                           feats.NumRows() - t);
 
 
-    int32 tot_frames = left_context + frames_per_eg + right_context;
+    int32 tot_frames = left_context + actual_frames_per_eg + right_context;
 
     Matrix <BaseFloat> input_frames(tot_frames, feats.NumCols());
 
     // Set up "input_frames".
-    for (int32 j = -left_context; j < frames_per_eg + right_context; j++) {
+    for (int32 j = -left_context; j < actual_frames_per_eg + right_context; j++) {
       int32 t2 = j + t;
       if (t2 < 0) t2 = 0;
       if (t2 >= feats.NumRows()) t2 = feats.NumRows() - 1;
@@ -74,7 +75,7 @@ static void ProcessFile(const MatrixBase <BaseFloat> &feats,
     eg.addFeature("framewidth", feats.NumCols());
     eg.addFeature("framesperinput", left_context + 1 + right_context);
     eg.addFeature("count", actual_frames_per_eg);
-    eg.addFeature("input", input_frames);
+    eg.addSequenceFeature("input", input_frames);
 
     // if applicable, add the iVector feature.
     if (ivector_feats != NULL) {
@@ -90,11 +91,11 @@ static void ProcessFile(const MatrixBase <BaseFloat> &feats,
     }
 
 //    // add the labels.
-    Posterior labels(frames_per_eg);
+    Posterior labels(actual_frames_per_eg);
     for (int32 i = 0; i < actual_frames_per_eg; i++)
       labels[i] = pdf_post[t + i];
     // remaining posteriors for frames are empty.
-    eg.addFeature("output", labels);
+    eg.addSequenceFeature("output", labels);
 //    eg.io.push_back(NnetIo("output", num_pdfs, 0, labels));
 //
 //    //if (compress)
